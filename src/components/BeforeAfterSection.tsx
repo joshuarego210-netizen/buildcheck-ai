@@ -56,7 +56,7 @@ export const BeforeAfterSection = () => {
                 <h2 className="text-3xl font-bold text-success mb-4">
                   After (BuildCheck AI)
                 </h2>
-                <img src={afterImage} alt="Architect reviewing AI-generated compliance report" className="rounded-lg w-full h-48 object-cover mb-6" />
+                <img src={afterImage} alt="Architect reviewing AI-generated compliance report" className="rounded-lg w-full h-full object-cover mb-6" />
               </div>
               
               <div className="flex items-center gap-3 mb-4">
