@@ -12,9 +12,9 @@ export const HeroSection = () => {
           <div className="space-y-8">
             <div className="space-y-4">
               <h1 className="text-5xl lg:text-6xl font-bold leading-tight">
-                Check Your Building
+                Check Your Building Bylaw
                 <span className="bg-gradient-to-r from-primary to-primary-hover bg-clip-text text-transparent">
-                  {" "}Bylaw Compliance
+                  {" "}Compliance
                 </span>
               </h1>
               <p className="text-xl text-muted-foreground leading-relaxed">
