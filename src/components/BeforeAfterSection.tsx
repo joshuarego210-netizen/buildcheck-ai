@@ -92,11 +92,9 @@ export const BeforeAfterSection = () => {
                 </li>
               </ul>
               
-              <div className="bg-success/10 p-4 rounded-lg border border-success/20">
-                <p className="text-lg font-semibold text-success text-center">
-                  Confidence, speed, and compliance in minutes
-                </p>
-              </div>
+              <p className="text-lg font-semibold text-success text-center">
+                Confidence, speed, and compliance in minutes
+              </p>
               
               <div className="text-center pt-4">
                 <Button 
