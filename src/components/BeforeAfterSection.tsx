@@ -8,7 +8,7 @@ export const BeforeAfterSection = () => {
   const navigate = useNavigate();
   return <section className="py-20 px-6 bg-gradient-subtle">
       <div className="container mx-auto max-w-6xl">
-        <div className="grid lg:grid-cols-2 gap-16">
+        <div className="grid lg:grid-cols-2 gap-16 bg-white">
           {/* Before Section */}
           <Card className="shadow-card border-0 bg-destructive-light">
             <CardContent className="p-8 space-y-6 bg-white">
