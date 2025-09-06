@@ -4,26 +4,19 @@ import { useNavigate } from "react-router-dom";
 import { Clock, AlertTriangle, CheckCircle2 } from "lucide-react";
 import beforeImage from "@/assets/before-manual-process.jpg";
 import afterImage from "@/assets/after-ai-process.jpg";
-
 export const BeforeAfterSection = () => {
   const navigate = useNavigate();
-
-  return (
-    <section className="py-20 px-6 bg-gradient-subtle">
+  return <section className="py-20 px-6 bg-gradient-subtle">
       <div className="container mx-auto max-w-6xl">
         <div className="grid lg:grid-cols-2 gap-16">
           {/* Before Section */}
           <Card className="shadow-card border-0 bg-destructive-light">
-            <CardContent className="p-8 space-y-6">
+            <CardContent className="p-8 space-y-6 bg-white">
               <div className="text-center">
                 <h2 className="text-3xl font-bold text-destructive mb-4">
                   Before (Manual Process)
                 </h2>
-                <img 
-                  src={beforeImage} 
-                  alt="Architect overwhelmed with manual compliance checking"
-                  className="rounded-lg w-full h-48 object-cover mb-6"
-                />
+                <img src={beforeImage} alt="Architect overwhelmed with manual compliance checking" className="rounded-lg w-full h-48 object-cover mb-6" />
               </div>
               
               <div className="flex items-center gap-3 mb-4">
@@ -57,17 +50,13 @@ export const BeforeAfterSection = () => {
           </Card>
 
           {/* After Section */}
-          <Card className="shadow-card border-0 bg-success-light">
-            <CardContent className="p-8 space-y-6">
+          <Card className="shadow-card border-0 bg-white">
+            <CardContent className="p-8 space-y-6 bg-white">
               <div className="text-center">
                 <h2 className="text-3xl font-bold text-success mb-4">
                   After (BuildCheck AI)
                 </h2>
-                <img 
-                  src={afterImage} 
-                  alt="Architect reviewing AI-generated compliance report"
-                  className="rounded-lg w-full h-48 object-cover mb-6"
-                />
+                <img src={afterImage} alt="Architect reviewing AI-generated compliance report" className="rounded-lg w-full h-48 object-cover mb-6" />
               </div>
               
               <div className="flex items-center gap-3 mb-4">
@@ -97,12 +86,7 @@ export const BeforeAfterSection = () => {
               </p>
               
               <div className="text-center pt-4">
-                <Button 
-                  variant="hero" 
-                  size="lg"
-                  onClick={() => navigate("/upload")}
-                  className="px-8"
-                >
+                <Button variant="hero" size="lg" onClick={() => navigate("/upload")} className="px-8">
                   Check Your Building Compliance
                 </Button>
               </div>
@@ -110,6 +94,5 @@ export const BeforeAfterSection = () => {
           </Card>
         </div>
       </div>
-    </section>
-  );
+    </section>;
 };
