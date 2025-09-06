@@ -14,7 +14,7 @@ export const HeroSection = () => {
               <h1 className="text-5xl lg:text-6xl font-bold leading-tight">
                 Check Your Building
                 <span className="bg-gradient-to-r from-primary to-primary-hover bg-clip-text text-transparent">
-                  {" "}Compliance
+                  {" "}Bylaw Compliance
                 </span>
               </h1>
               <p className="text-xl text-muted-foreground leading-relaxed">
