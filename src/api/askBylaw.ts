@@ -5,7 +5,7 @@ interface ParsedRow {
   plot_area_sqm: number;
   built_area_sqm: number;
   height_m: number;
-  floors: number;
+  floors: string;
   front_setback_m: number;
   rear_setback_m: number;
   side_setback_m: number;

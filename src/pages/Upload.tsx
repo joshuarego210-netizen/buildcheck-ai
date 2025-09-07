@@ -13,7 +13,7 @@ interface ParsedRow {
   plot_area_sqm: number;
   built_area_sqm: number;
   height_m: number;
-  floors: number;
+  floors: string;
   front_setback_m: number;
   rear_setback_m: number;
   side_setback_m: number;
@@ -105,7 +105,7 @@ const Upload = () => {
           plot_area_sqm: Number(normalized['plot_area_sqm'] || normalized['plot_area'] || 0),
           built_area_sqm: Number(normalized['built_area_sqm'] || normalized['built_area'] || 0),
           height_m: Number(normalized['height_m'] || normalized['height'] || 0),
-          floors: Number(normalized['floors'] || normalized['floor_count'] || 0),
+          floors: normalized['floors'] || normalized['floor_count'] || '',
           front_setback_m: Number(normalized['front_setback_m'] || normalized['front_setback'] || 0),
           rear_setback_m: Number(normalized['rear_setback_m'] || normalized['rear_setback'] || 0),
           side_setback_m: Number(normalized['side_setback_m'] || normalized['side_setback'] || 0),
