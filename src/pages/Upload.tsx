@@ -176,13 +176,6 @@ const Upload = () => {
     } catch (error) {
       console.error('Analysis error:', error);
       
-      // Only show toast for actual API failures
-      toast({
-        title: "Analysis Error",
-        description: "Unable to reach compliance API. Please try again.",
-        variant: "destructive",
-      });
-      
       // Show mock data as fallback when API truly fails
       const mockReport: ComplianceReport = {
         project_name: parsedRow.project_name,
@@ -273,11 +266,6 @@ const Upload = () => {
       
     } catch (error) {
       console.error('Q&A error:', error);
-      toast({
-        title: "Q&A Error",
-        description: "Failed to get answer. Using fallback response.",
-        variant: "destructive",
-      });
       
       // Fallback response
       const fallbackAnswer = "I apologize, but I cannot access the bylaw document at the moment. Please try again later or consult the BBMP 2019 bylaws directly for specific requirements.";
