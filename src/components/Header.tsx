@@ -10,7 +10,7 @@ export const Header = () => {
             alt="BuildCheck AI Logo" 
             className="w-10 h-10"
           />
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-500 to-green-400 bg-clip-text text-transparent">
             BuildCheck AI
           </h1>
         </div>
