@@ -562,7 +562,9 @@ const Upload = () => {
             Currently BuildCheckAI supports CSV files exported from Revit schedules.<br />
             RVT and IFC support coming soon.
           </p>
-
+          <p className="text-sm text-muted-foreground mb-8">
+            For now, we focus on Bangalore BBMP building bylaws. Soon, we'll expand to other cities and include additional regulations such as the National Building Code (NBC), fire safety, structural safety, utility design, and environmental standards.
+          </p>
           <Card className="shadow-card mb-6">
             <CardContent className="p-8">
               <div 
