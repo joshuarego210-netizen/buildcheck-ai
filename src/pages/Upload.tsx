@@ -1,12 +1,14 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Upload as UploadIcon, FileText, Download, CheckCircle, XCircle, MessageSquare, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState, useCallback } from "react";
 import Papa from 'papaparse';
 import { useToast } from "@/hooks/use-toast";
 import jsPDF from 'jspdf';
+import { Header } from "@/components/Header";
 
 interface ParsedRow {
   project_name: string;
@@ -340,12 +342,17 @@ const Upload = () => {
         setQnAThread(prev => [...prev, { question, ...data }]);
       } catch (error) {
         console.error('Ask error:', error);
-        setQnAThread(prev => [...prev, { 
-          question, 
-          answer: "I apologize, but I cannot access the bylaw document at the moment.",
+        
+        // Fallback response
+        const fallbackAnswer = "I apologize, but I cannot access the bylaw document at the moment.";
+        const newEntry = {
+          question: question,
+          answer: fallbackAnswer,
           clause: null,
           page: null
-        }]);
+        };
+        
+        setQnAThread(prev => [...prev, newEntry]);
       }
     }
     
@@ -586,6 +593,7 @@ const Upload = () => {
 
   return (
     <div className="min-h-screen bg-gradient-subtle">
+      <Header />
       <div className="container mx-auto max-w-4xl py-8 px-6">
         {/* Top Bar */}
         <div className="flex justify-end mb-8">
