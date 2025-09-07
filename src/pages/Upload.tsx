@@ -718,10 +718,6 @@ const Upload = () => {
                   <p className="mt-4 text-sm text-red-600">{uploadError}</p>
                 )}
               </div>
-              
-              <div className="mt-6 text-center">
-                <a href="#" className="text-primary hover:underline">Download Sample CSV</a>
-              </div>
             </CardContent>
           </Card>
 
