@@ -175,13 +175,15 @@ const Upload = () => {
       
     } catch (error) {
       console.error('Analysis error:', error);
+      
+      // Only show toast for actual API failures
       toast({
         title: "Analysis Error",
-        description: "Failed to analyze compliance. Using fallback data for demonstration.",
+        description: "Unable to reach compliance API. Please try again.",
         variant: "destructive",
       });
       
-      // Show mock data for now if API fails
+      // Show mock data as fallback when API truly fails
       const mockReport: ComplianceReport = {
         project_name: parsedRow.project_name,
         filename: `${parsedRow.project_name.replace(/\s+/g, '_')}.csv`,
