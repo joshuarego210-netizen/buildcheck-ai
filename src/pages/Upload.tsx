@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { useState, useCallback } from "react";
 import Papa from 'papaparse';
 import { useToast } from "@/hooks/use-toast";
+import jsPDF from 'jspdf';
 
 interface ParsedRow {
   project_name: string;
@@ -22,12 +23,22 @@ interface ParsedRow {
   far_utilized: number;
 }
 
-interface ComplianceResult {
+interface ComplianceCheck {
   metric: string;
-  value: string;
-  limit: string;
-  status: 'compliant' | 'violation';
-  reference: string;
+  value: any;
+  limit: any;
+  compliant: boolean;
+  clause: string | object;
+}
+
+interface ComplianceReport {
+  project_name: string;
+  filename: string;
+  checks: ComplianceCheck[];
+  summary: {
+    compliant: number;
+    violations: number;
+  };
 }
 
 const Upload = () => {
@@ -35,6 +46,7 @@ const Upload = () => {
   const { toast } = useToast();
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [parsedRow, setParsedRow] = useState<ParsedRow | null>(null);
+  const [complianceReport, setComplianceReport] = useState<ComplianceReport | null>(null);
   const [showReport, setShowReport] = useState(false);
   const [analysisLoading, setAnalysisLoading] = useState(false);
   const [qnAQuery, setQnAQuery] = useState("");
@@ -42,7 +54,6 @@ const Upload = () => {
   const [qnALoading, setQnALoading] = useState(false);
   const [uploadError, setUploadError] = useState("");
   const [isDragOver, setIsDragOver] = useState(false);
-  const [complianceResults, setComplianceResults] = useState<ComplianceResult[]>([]);
 
   const onFile = useCallback((file: File) => {
     setUploadError("");
@@ -157,50 +168,63 @@ const Upload = () => {
         throw new Error(`API error: ${response.status}`);
       }
       
-      const results = await response.json();
-      setComplianceResults(results);
+      const data: ComplianceReport = await response.json();
+      setComplianceReport(data);
       setShowReport(true);
       
     } catch (error) {
       console.error('Analysis error:', error);
       toast({
         title: "Analysis Error",
-        description: "Failed to analyze compliance. The API may not be implemented yet.",
+        description: "Failed to analyze compliance. Using fallback data for demonstration.",
         variant: "destructive",
       });
       
-      // Show mock data for now
-      const mockResults: ComplianceResult[] = [
-        { 
-          metric: "Building Height", 
-          value: `${parsedRow.height_m}m`, 
-          limit: "Max: 12m", 
-          status: parsedRow.height_m <= 12 ? "compliant" : "violation", 
-          reference: "BBMP 2019, Clause 4.3.2" 
-        },
-        { 
-          metric: "Setback", 
-          value: `${parsedRow.front_setback_m}m`, 
-          limit: "Required: 7m", 
-          status: parsedRow.front_setback_m >= 7 ? "compliant" : "violation", 
-          reference: "Clause 5.1.1" 
-        },
-        { 
-          metric: "Parking", 
-          value: `${parsedRow.parking_spots} spaces`, 
-          limit: "Min: 15", 
-          status: parsedRow.parking_spots >= 15 ? "compliant" : "violation", 
-          reference: "Clause 6.2.1" 
-        },
-        { 
-          metric: "FAR", 
-          value: parsedRow.far_utilized.toString(), 
-          limit: "Allowed: 1.25", 
-          status: parsedRow.far_utilized <= 1.25 ? "compliant" : "violation", 
-          reference: "Table 5.4.1" 
-        },
-      ];
-      setComplianceResults(mockResults);
+      // Show mock data for now if API fails
+      const mockReport: ComplianceReport = {
+        project_name: parsedRow.project_name,
+        filename: `${parsedRow.project_name.replace(/\s+/g, '_')}.csv`,
+        checks: [
+          { 
+            metric: "height", 
+            value: parsedRow.height_m, 
+            limit: { max: 12 }, 
+            compliant: parsedRow.height_m <= 12, 
+            clause: "BBMP 2019, Clause 4.3.2" 
+          },
+          { 
+            metric: "setback", 
+            value: { front: parsedRow.front_setback_m, rear: parsedRow.rear_setback_m, side: parsedRow.side_setback_m }, 
+            limit: { front: 7, rear: 3, side: 3 }, 
+            compliant: parsedRow.front_setback_m >= 7 && parsedRow.rear_setback_m >= 3 && parsedRow.side_setback_m >= 3, 
+            clause: { front: "Clause 5.1.1", rear: "Clause 5.1.2", side: "Clause 5.1.3" }
+          },
+          { 
+            metric: "parking", 
+            value: parsedRow.parking_spots, 
+            limit: { min: 15 }, 
+            compliant: parsedRow.parking_spots >= 15, 
+            clause: "Clause 6.2.1" 
+          },
+          { 
+            metric: "far", 
+            value: parsedRow.far_utilized, 
+            limit: { max: 1.25 }, 
+            compliant: parsedRow.far_utilized <= 1.25, 
+            clause: "Table 5.4.1" 
+          },
+        ],
+        summary: {
+          compliant: 0,
+          violations: 0
+        }
+      };
+      
+      // Calculate summary
+      mockReport.summary.compliant = mockReport.checks.filter(c => c.compliant).length;
+      mockReport.summary.violations = mockReport.checks.length - mockReport.summary.compliant;
+      
+      setComplianceReport(mockReport);
       setShowReport(true);
     } finally {
       setAnalysisLoading(false);
@@ -215,6 +239,123 @@ const Upload = () => {
       setQnAResponse("The minimum stair width in residential buildings is 1.2 meters as per BBMP 2019, Clause 6.3.2. This ensures safe evacuation and accessibility compliance.");
       setQnALoading(false);
     }, 1500);
+  };
+
+  const downloadPDFReport = () => {
+    if (!complianceReport) return;
+
+    try {
+      const doc = new jsPDF();
+      
+      // Title
+      doc.setFontSize(20);
+      doc.text('Building Compliance Report', 20, 30);
+      
+      // Project details
+      doc.setFontSize(12);
+      doc.text(`Project: ${complianceReport.project_name}`, 20, 50);
+      doc.text(`Date: ${new Date().toLocaleDateString()}`, 20, 60);
+      doc.text(`File: ${complianceReport.filename}`, 20, 70);
+      
+      // Summary
+      doc.setFontSize(14);
+      doc.text('Summary', 20, 90);
+      doc.setFontSize(12);
+      doc.setTextColor(0, 128, 0); // Green
+      doc.text(`✓ ${complianceReport.summary.compliant} Compliant`, 20, 105);
+      doc.setTextColor(255, 0, 0); // Red
+      doc.text(`✗ ${complianceReport.summary.violations} Violations`, 20, 115);
+      doc.setTextColor(0, 0, 0); // Black
+      
+      // Checks
+      doc.setFontSize(14);
+      doc.text('Detailed Checks', 20, 135);
+      
+      let yPos = 150;
+      complianceReport.checks.forEach((check, index) => {
+        doc.setFontSize(12);
+        doc.setFont(undefined, 'bold');
+        
+        const title = check.metric.charAt(0).toUpperCase() + check.metric.slice(1);
+        doc.text(`${index + 1}. ${title}`, 20, yPos);
+        
+        doc.setFont(undefined, 'normal');
+        
+        // Value and limit
+        let valueText = '';
+        let limitText = '';
+        
+        if (check.metric === 'setback') {
+          const val = check.value as any;
+          const lim = check.limit as any;
+          valueText = `Front: ${val.front}m, Rear: ${val.rear}m, Side: ${val.side}m`;
+          limitText = `Required - Front: ${lim.front}m, Rear: ${lim.rear}m, Side: ${lim.side}m`;
+        } else {
+          valueText = `${check.value}${check.metric === 'height' ? 'm' : check.metric === 'parking' ? ' spaces' : ''}`;
+          const limitKey = Object.keys(check.limit)[0];
+          limitText = `${limitKey}: ${check.limit[limitKey]}${check.metric === 'height' ? 'm' : check.metric === 'parking' ? ' spaces' : ''}`;
+        }
+        
+        doc.text(`Value: ${valueText}`, 25, yPos + 10);
+        doc.text(`Limit: ${limitText}`, 25, yPos + 20);
+        
+        // Status
+        doc.setTextColor(check.compliant ? 0 : 255, check.compliant ? 128 : 0, 0);
+        doc.text(`Status: ${check.compliant ? '✓ Compliant' : '✗ Violation'}`, 25, yPos + 30);
+        doc.setTextColor(0, 0, 0);
+        
+        // Clause
+        const clauseText = typeof check.clause === 'string' ? check.clause : 'Multiple clauses';
+        doc.text(`Reference: ${clauseText}`, 25, yPos + 40);
+        
+        yPos += 55;
+        
+        // Add new page if needed
+        if (yPos > 250) {
+          doc.addPage();
+          yPos = 30;
+        }
+      });
+      
+      doc.save(`${complianceReport.project_name}_compliance_report.pdf`);
+      
+      toast({
+        title: "Report Downloaded",
+        description: "PDF compliance report has been downloaded successfully.",
+      });
+      
+    } catch (error) {
+      console.error('PDF generation failed:', error);
+      
+      // Fallback to JSON download
+      const dataStr = JSON.stringify(complianceReport, null, 2);
+      const dataBlob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(dataBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${complianceReport.project_name}_compliance_report.json`;
+      link.click();
+      URL.revokeObjectURL(url);
+      
+      toast({
+        title: "JSON Report Downloaded",
+        description: "PDF generation failed, downloaded JSON report instead.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleTryAnother = () => {
+    setUploadedFile(null);
+    setParsedRow(null);
+    setComplianceReport(null);
+    setShowReport(false);
+    setUploadError("");
+    
+    toast({
+      title: "Ready for New Upload",
+      description: "Upload area cleared. You can now upload a new CSV file.",
+    });
   };
 
   const formatPreviewValue = (key: string, value: any): string => {
@@ -254,6 +395,75 @@ const Upload = () => {
       far_utilized: 'FAR Utilized'
     };
     return labels[key] || key;
+  };
+
+  const renderComplianceCard = (check: ComplianceCheck) => {
+    const getCardTitle = (metric: string) => {
+      const titles: { [key: string]: string } = {
+        height: 'Building Height',
+        setback: 'Setback Requirements',
+        parking: 'Parking Spaces',
+        far: 'Floor Area Ratio (FAR)'
+      };
+      return titles[metric] || metric;
+    };
+
+    const getValueDisplay = (check: ComplianceCheck) => {
+      if (check.metric === 'setback') {
+        const val = check.value as any;
+        return `Front: ${val.front}m, Rear: ${val.rear}m, Side: ${val.side}m`;
+      } else if (check.metric === 'height') {
+        return `${check.value}m`;
+      } else if (check.metric === 'parking') {
+        return `${check.value} spaces`;
+      } else {
+        return check.value.toString();
+      }
+    };
+
+    const getLimitDisplay = (check: ComplianceCheck) => {
+      if (check.metric === 'setback') {
+        const lim = check.limit as any;
+        return `Required - Front: ${lim.front}m, Rear: ${lim.rear}m, Side: ${lim.side}m`;
+      } else {
+        const limitKey = Object.keys(check.limit)[0];
+        const limitValue = check.limit[limitKey];
+        const unit = check.metric === 'height' ? 'm' : check.metric === 'parking' ? ' spaces' : '';
+        return `${limitKey.charAt(0).toUpperCase() + limitKey.slice(1)}: ${limitValue}${unit}`;
+      }
+    };
+
+    const getClauseDisplay = (clause: string | object) => {
+      if (typeof clause === 'string') {
+        return clause;
+      } else {
+        return 'Multiple clauses - see detailed report';
+      }
+    };
+
+    return (
+      <Card key={check.metric} className={`shadow-card border ${check.compliant ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+        <CardContent className="p-6">
+          <div className="flex items-start justify-between mb-4">
+            <h3 className="font-semibold text-gray-900">{getCardTitle(check.metric)}</h3>
+            {check.compliant ? 
+              <CheckCircle className="text-green-600" size={20} /> : 
+              <XCircle className="text-red-600" size={20} />
+            }
+          </div>
+          <p className="text-sm mb-2 text-gray-900">
+            <span className="font-medium">{getValueDisplay(check)}</span>
+          </p>
+          <p className="text-sm mb-3 text-gray-700">
+            {getLimitDisplay(check)}
+          </p>
+          <p className={`text-sm font-medium mb-3 ${check.compliant ? 'text-green-600' : 'text-red-600'}`}>
+            {check.compliant ? '✅ Compliant' : '❌ Violation'}
+          </p>
+          <p className="text-xs text-gray-500">{getClauseDisplay(check.clause)}</p>
+        </CardContent>
+      </Card>
+    );
   };
 
   const exampleQuestions = [
@@ -387,46 +597,32 @@ const Upload = () => {
         </div>
 
         {/* Compliance Report */}
-        {showReport && complianceResults.length > 0 && (
+        {showReport && complianceReport && (
           <div className="mb-12">
-            <h2 className="text-2xl font-bold mb-6">
-              Compliance Report – {uploadedFile?.name}
+            <h2 className="text-2xl font-bold mb-6 text-gray-900">
+              Compliance Report – {complianceReport.filename}
             </h2>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-              {complianceResults.map((item, index) => (
-                <Card key={index} className={`shadow-card border ${item.status === 'compliant' ? 'bg-pastel-green/20 border-pastel-green/40' : 'bg-pastel-orange/20 border-pastel-orange/40'}`}>
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between mb-4">
-                      <h3 className="font-semibold text-foreground">{item.metric}</h3>
-                      {item.status === 'compliant' ? 
-                        <CheckCircle className="text-green-600" size={20} /> : 
-                        <XCircle className="text-red-600" size={20} />
-                      }
-                    </div>
-                    <p className="text-sm mb-2 text-foreground">
-                      <span className="font-medium">{item.value}</span> | {item.limit}
-                    </p>
-                    <p className={`text-sm font-medium mb-3 ${item.status === 'compliant' ? 'text-green-600' : 'text-red-600'}`}>
-                      {item.status === 'compliant' ? '✅ Compliant' : '❌ Violation'}
-                    </p>
-                    <p className="text-xs text-muted-foreground">{item.reference}</p>
-                  </CardContent>
-                </Card>
-              ))}
+              {complianceReport.checks.map((check) => renderComplianceCard(check))}
             </div>
 
             <div className="text-center mb-8">
-              <p className="text-2xl font-bold">
-                <span className="text-green-600">{complianceResults.filter(r => r.status === 'compliant').length} Compliant</span>, 
-                <span className="text-red-600"> {complianceResults.filter(r => r.status === 'violation').length} Violation{complianceResults.filter(r => r.status === 'violation').length !== 1 ? 's' : ''}</span>
+              <p className="text-2xl font-bold text-gray-900">
+                <span className="text-green-600">{complianceReport.summary.compliant} Compliant</span>
+                {complianceReport.summary.violations > 0 && (
+                  <>, <span className="text-red-600">{complianceReport.summary.violations} Violation{complianceReport.summary.violations !== 1 ? 's' : ''}</span></>
+                )}
               </p>
             </div>
 
             {/* Actions */}
             <div className="flex gap-4 justify-center mb-12">
-              <Button size="lg">Download Compliance Report</Button>
-              <Button variant="outline" size="lg" onClick={() => {setShowReport(false); setUploadedFile(null); setParsedRow(null);}}>
+              <Button size="lg" onClick={downloadPDFReport}>
+                <Download className="mr-2 h-4 w-4" />
+                Download Compliance Report
+              </Button>
+              <Button variant="outline" size="lg" onClick={handleTryAnother}>
                 Try Another Project
               </Button>
             </div>
