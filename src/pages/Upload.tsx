@@ -39,6 +39,7 @@ const Upload = () => {
   };
 
   const handleAnalyze = () => {
+    if (!uploadedFile) return;
     setAnalysisLoading(true);
     // Simulate analysis
     setTimeout(() => {
@@ -98,15 +99,18 @@ const Upload = () => {
                 <UploadIcon className="mx-auto text-muted-foreground mb-4" size={48} />
                 <h3 className="text-lg font-semibold mb-2">Drop your CSV file here</h3>
                 <p className="text-muted-foreground mb-4">or click to browse</p>
-                <label className="cursor-pointer">
-                  <Button variant="outline">Choose File</Button>
+                <div className="relative">
+                  <Button variant="outline" onClick={() => document.getElementById('file-input')?.click()}>
+                    Choose File
+                  </Button>
                   <input 
+                    id="file-input"
                     type="file" 
-                    accept=".csv" 
+                    accept=".csv,text/csv" 
                     onChange={handleFileUpload}
-                    className="hidden"
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                   />
-                </label>
+                </div>
                 {uploadedFile && (
                   <p className="mt-4 text-sm text-foreground">✓ {uploadedFile.name}</p>
                 )}
@@ -164,22 +168,22 @@ const Upload = () => {
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
               {mockComplianceData.map((item, index) => (
-                <Card key={index} className={`shadow-card ${item.status === 'compliant' ? 'bg-pastel-green/10' : 'bg-pastel-orange/10'}`}>
+                <Card key={index} className={`shadow-card border ${item.status === 'compliant' ? 'bg-pastel-green/20 border-pastel-green/40' : 'bg-pastel-orange/20 border-pastel-orange/40'}`}>
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between mb-4">
-                      <h3 className="font-semibold">{item.metric}</h3>
+                      <h3 className="font-semibold text-foreground">{item.metric}</h3>
                       {item.status === 'compliant' ? 
                         <CheckCircle className="text-green-600" size={20} /> : 
                         <XCircle className="text-red-600" size={20} />
                       }
                     </div>
-                    <p className="text-sm mb-2">
+                    <p className="text-sm mb-2 text-foreground">
                       <span className="font-medium">{item.value}</span> | {item.limit}
                     </p>
-                    <p className={`text-sm font-medium ${item.status === 'compliant' ? 'text-green-600' : 'text-red-600'}`}>
+                    <p className={`text-sm font-medium mb-3 ${item.status === 'compliant' ? 'text-green-600' : 'text-red-600'}`}>
                       {item.status === 'compliant' ? '✅ Compliant' : '❌ Violation'}
                     </p>
-                    <p className="text-xs text-muted-foreground mt-3">{item.reference}</p>
+                    <p className="text-xs text-muted-foreground">{item.reference}</p>
                   </CardContent>
                 </Card>
               ))}
