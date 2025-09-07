@@ -608,13 +608,82 @@ const Upload = () => {
         {/* Upload Section */}
         <div className="mb-12">
           <h1 className="text-4xl font-bold mb-4">Upload Your BIM Data</h1>
-          <p className="text-lg text-muted-foreground mb-8">
-            Currently BuildCheckAI supports CSV files exported from Revit schedules.<br />
-            RVT and IFC support coming soon.
-          </p>
-          <p className="text-sm text-muted-foreground mb-8">
-            For now, we focus on Bangalore BBMP building bylaws. Soon, we'll expand to other cities and include additional regulations such as the National Building Code (NBC), fire safety, structural safety, utility design, and environmental standards.
-          </p>
+          {/* Location and Bylaw Type Dropdowns */}
+          <div className="flex gap-6 mb-8">
+            <div className="flex-1">
+              <label className="block text-sm font-medium mb-2">Location</label>
+              <Select defaultValue="bangalore">
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select location" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="bangalore">Bangalore</SelectItem>
+                  <SelectItem value="hyderabad" disabled>
+                    <div className="flex items-center justify-between w-full" title="Coming soon">
+                      <span className="text-gray-400">Hyderabad</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="chennai" disabled>
+                    <div className="flex items-center justify-between w-full" title="Coming soon">
+                      <span className="text-gray-400">Chennai</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="delhi" disabled>
+                    <div className="flex items-center justify-between w-full" title="Coming soon">
+                      <span className="text-gray-400">Delhi</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="mumbai" disabled>
+                    <div className="flex items-center justify-between w-full" title="Coming soon">
+                      <span className="text-gray-400">Mumbai</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="pune" disabled>
+                    <div className="flex items-center justify-between w-full" title="Coming soon">
+                      <span className="text-gray-400">Pune</span>
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="flex-1">
+              <label className="block text-sm font-medium mb-2">Bylaw Type</label>
+              <Select defaultValue="local-bylaws">
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select bylaw type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="local-bylaws">Local Bylaws</SelectItem>
+                  <SelectItem value="nbc" disabled>
+                    <div className="flex items-center justify-between w-full" title="Coming soon">
+                      <span className="text-gray-400">National Building Code 2016</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="fire-norms" disabled>
+                    <div className="flex items-center justify-between w-full" title="Coming soon">
+                      <span className="text-gray-400">Fire Norms</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="structural" disabled>
+                    <div className="flex items-center justify-between w-full" title="Coming soon">
+                      <span className="text-gray-400">Structural Standards</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="utility" disabled>
+                    <div className="flex items-center justify-between w-full" title="Coming soon">
+                      <span className="text-gray-400">Utility Design</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="environmental" disabled>
+                    <div className="flex items-center justify-between w-full" title="Coming soon">
+                      <span className="text-gray-400">Environmental Standards</span>
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
           <Card className="shadow-card mb-6">
             <CardContent className="p-8">
               <div 
