@@ -28,102 +28,144 @@ interface AskBylawResponse {
   page?: string;
 }
 
+export async function askBylawHandler(body: AskBylawRequest): Promise<AskBylawResponse> {
+  const { question, context } = body;
+
+  if (!question) {
+    throw new Error("Question is required");
+  }
+
+  // Verify environment variables
+  const apiKey = process.env.LLAMACLOUD_API_KEY;
+  const endpoint = process.env.LLAMACLOUD_ENDPOINT;
+  const documentId = process.env.LLAMACLOUD_DOCUMENT_ID;
+
+  if (!apiKey || !endpoint || !documentId) {
+    console.error('Missing environment variables:', { 
+      hasApiKey: !!apiKey, 
+      hasEndpoint: !!endpoint, 
+      hasDocumentId: !!documentId 
+    });
+    throw new Error("LlamaCloud configuration is incomplete");
+  }
+
+  console.log('Processing bylaw question:', question);
+  console.log('Using document ID:', documentId);
+
+  // Construct proper prompt for LlamaCloud
+  const contextStr = context?.parsedRow ? `\nProject Context: ${JSON.stringify(context.parsedRow, null, 2)}` : '';
+  
+  const prompt = `You are an assistant with access to the Bangalore bylaws document ${documentId}.
+
+Answer the following question concisely in 1-3 sentences and include:
+(a) Short numeric answer if applicable (e.g., "1.5 meters", "7 meters", "1 space per 10 seats")
+(b) The exact clause citation and page number if available
+(c) A one-line actionable note
+
+${contextStr}
+
+Question: ${question}
+
+Please respond in JSON format with the following structure:
+{
+  "answer": "Your detailed answer here",
+  "clause": "Exact clause reference",
+  "page": "Page number"
+}`;
+
+  // Retry logic for LlamaCloud API
+  let lastError: any;
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      console.log(`LlamaCloud API attempt ${attempt}/2`);
+      
+      const response = await axios.post(
+        `${endpoint}/v1/parsing/job/${documentId}/result/markdown`,
+        {
+          query: prompt,
+          parsing_instruction: "Extract specific bylaw requirements with numeric values, clause references, and page numbers."
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json'
+          },
+          timeout: 30000
+        }
+      );
+
+      console.log('LlamaCloud response status:', response.status);
+      console.log('LlamaCloud response data:', response.data);
+
+      // Parse response - LlamaCloud might return different formats
+      let result: AskBylawResponse;
+      
+      if (typeof response.data === 'string') {
+        // Try to extract JSON from markdown response
+        const jsonMatch = response.data.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          result = JSON.parse(jsonMatch[0]);
+        } else {
+          // Fallback: create structured response from text
+          result = {
+            answer: response.data.trim(),
+            clause: null,
+            page: null
+          };
+        }
+      } else if (response.data.answer) {
+        result = response.data;
+      } else {
+        // Handle different response structures
+        result = {
+          answer: response.data.result || response.data.text || JSON.stringify(response.data),
+          clause: response.data.clause || null,
+          page: response.data.page || null
+        };
+      }
+
+      // Validate response
+      if (!result.answer || result.answer.trim().length === 0) {
+        throw new Error('Empty response from LlamaCloud');
+      }
+
+      return {
+        answer: result.answer,
+        clause: result.clause || null,
+        page: result.page || null
+      };
+
+    } catch (error: any) {
+      lastError = error;
+      console.error(`LlamaCloud API attempt ${attempt} failed:`, error.message);
+      
+      if (attempt === 1) {
+        // Wait before retry
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    }
+  }
+
+  // If all attempts failed, throw a clear error
+  console.error('All LlamaCloud attempts failed:', lastError);
+  throw new Error('Temporary error connecting to bylaw database. Please try again in a moment.');
+}
+
 export default async function handler(req: any, res: any) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { question, context }: AskBylawRequest = req.body;
-
-  if (!question) {
-    return res.status(400).json({ error: "Question is required" });
-  }
-
   try {
-    console.log('Processing bylaw question:', question);
-
-    // Detailed, tuned prompt for LlamaCloud
-    const prompt = `
-You are an assistant with the Bangalore bylaws document ${process.env.LLAMACLOUD_DOCUMENT_ID}.
-Answer concisely in 1-3 sentences and include:
-(a) numeric answer if applicable,
-(b) exact clause citation,
-(c) actionable note.
-Context (optional): ${JSON.stringify(context?.parsedRow || {})}
-Question: ${question}
-Return JSON in this exact format: { "answer": "...", "clause": "...", "page": "..." }
-`;
-
-    const response = await axios.post(process.env.LLAMACLOUD_ENDPOINT, {
-      document_id: process.env.LLAMACLOUD_DOCUMENT_ID,
-      question: prompt
-    }, {
-      headers: {
-        'Authorization': `Bearer ${process.env.LLAMACLOUD_API_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      timeout: 30000
-    });
-
-    console.log('LlamaCloud response:', response.data);
-
-    // Parse the JSON returned by LlamaCloud and return
-    let data: AskBylawResponse;
-    if (typeof response.data === 'string') {
-      data = JSON.parse(response.data);
-    } else {
-      data = response.data;
-    }
-
-    // Validate response structure
-    if (!data.answer) {
-      throw new Error('Invalid response format from LlamaCloud');
-    }
-
-    res.status(200).json({
-      answer: data.answer,
-      clause: data.clause || null,
-      page: data.page || null
-    });
-
-  } catch (err) {
-    console.error("Ask-a-Bylaw error:", err);
+    const result = await askBylawHandler(req.body);
+    res.status(200).json(result);
+  } catch (error: any) {
+    console.error("Ask-a-Bylaw handler error:", error);
     
-    // Fallback responses for common questions
-    const fallbackResponses: { [key: string]: AskBylawResponse } = {
-      'minimum stair width for hospitals': {
-        answer: 'Minimum stair width for hospitals is 1.5 meters as per BBMP 2019. This ensures safe evacuation during emergencies. Ensure compliance for patient safety.',
-        clause: 'BBMP 2019, Clause 6.3.4',
-        page: '47'
-      },
-      'car parking requirements for auditorium': {
-        answer: 'Auditoriums require 1 parking space per 10 seats or 1 space per 50 sqm of floor area, whichever is higher. Provide adequate parking to avoid violations.',
-        clause: 'BBMP 2019, Clause 6.2.3',
-        page: '43'
-      },
-      'front setback for residential': {
-        answer: 'Front setback for residential buildings is minimum 7 meters from the road boundary. This provides adequate light, ventilation and fire safety access.',
-        clause: 'BBMP 2019, Clause 5.1.1',
-        page: '35'
-      },
-      'minimum width of corridors in apartments': {
-        answer: 'Minimum corridor width in apartments is 1.5 meters for main corridors and 1.2 meters for secondary corridors. Ensure adequate width for safe movement.',
-        clause: 'BBMP 2019, Clause 4.2.5',
-        page: '32'
-      }
-    };
-
-    // Try to match question with fallback
-    const questionLower = question.toLowerCase();
-    for (const [key, response] of Object.entries(fallbackResponses)) {
-      if (questionLower.includes(key.toLowerCase())) {
-        return res.status(200).json(response);
-      }
-    }
-
-    // Generic fallback
-    res.status(200).json({
-      answer: "I apologize, but I cannot access the bylaw document at the moment. Please try again later or consult the BBMP 2019 bylaws directly for specific requirements.",
+    res.status(500).json({
+      answer: error.message.includes('Temporary error') 
+        ? error.message 
+        : "Temporary error connecting to bylaw database. Please try again in a moment.",
       clause: null,
       page: null
     });
