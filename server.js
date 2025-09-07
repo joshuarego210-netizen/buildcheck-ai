@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const { checkComplianceHandler } = require('./dist/api/checkCompliance.js');
+const { askBylawHandler } = require('./dist/api/askBylaw.js');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -23,6 +24,19 @@ app.post('/api/checkCompliance', async (req, res) => {
   }
 });
 
+app.post('/api/askBylaw', async (req, res) => {
+  try {
+    const result = await askBylawHandler(req.body);
+    res.json(result);
+  } catch (error) {
+    console.error('Ask Bylaw API Error:', error);
+    res.status(500).json({ 
+      error: 'Internal server error',
+      details: error.message 
+    });
+  }
+});
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
@@ -32,4 +46,5 @@ app.listen(PORT, () => {
   console.log(`API server running on port ${PORT}`);
   console.log(`Health check: http://localhost:${PORT}/api/health`);
   console.log(`Compliance API: http://localhost:${PORT}/api/checkCompliance`);
+  console.log(`Ask Bylaw API: http://localhost:${PORT}/api/askBylaw`);
 });

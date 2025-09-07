@@ -52,6 +52,7 @@ const Upload = () => {
   const [qnAQuery, setQnAQuery] = useState("");
   const [qnAResponse, setQnAResponse] = useState("");
   const [qnALoading, setQnALoading] = useState(false);
+  const [qnAThread, setQnAThread] = useState<Array<{question: string, answer: string, clause: string | null, page?: string}>>([]);
   const [uploadError, setUploadError] = useState("");
   const [isDragOver, setIsDragOver] = useState(false);
 
@@ -231,14 +232,127 @@ const Upload = () => {
     }
   };
 
-  const handleQnASubmit = () => {
+  const handleQnASubmit = async () => {
     if (!qnAQuery.trim()) return;
+    
     setQnALoading(true);
-    // Simulate AI response
-    setTimeout(() => {
-      setQnAResponse("The minimum stair width in residential buildings is 1.2 meters as per BBMP 2019, Clause 6.3.2. This ensures safe evacuation and accessibility compliance.");
+    setQnAResponse("");
+    
+    try {
+      const response = await fetch('/api/askBylaw', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          question: qnAQuery,
+          context: parsedRow || undefined
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      // Add to thread
+      const newEntry = {
+        question: qnAQuery,
+        answer: data.answer,
+        clause: data.clause,
+        page: data.page
+      };
+      
+      setQnAThread(prev => [...prev, newEntry]);
+      setQnAResponse(data.answer);
+      setQnAQuery(""); // Clear input after successful submission
+      
+    } catch (error) {
+      console.error('Q&A error:', error);
+      toast({
+        title: "Q&A Error",
+        description: "Failed to get answer. Using fallback response.",
+        variant: "destructive",
+      });
+      
+      // Fallback response
+      const fallbackAnswer = "I apologize, but I cannot access the bylaw document at the moment. Please try again later or consult the BBMP 2019 bylaws directly for specific requirements.";
+      const newEntry = {
+        question: qnAQuery,
+        answer: fallbackAnswer,
+        clause: null
+      };
+      
+      setQnAThread(prev => [...prev, newEntry]);
+      setQnAResponse(fallbackAnswer);
+      setQnAQuery("");
+      
+    } finally {
       setQnALoading(false);
-    }, 1500);
+    }
+  };
+
+  const handleExampleQuestion = async (question: string) => {
+    setQnAQuery(question);
+    
+    // Auto-submit the question
+    setQnALoading(true);
+    setQnAResponse("");
+    
+    try {
+      const response = await fetch('/api/askBylaw', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          question: question,
+          context: parsedRow || undefined
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      // Add to thread
+      const newEntry = {
+        question: question,
+        answer: data.answer,
+        clause: data.clause,
+        page: data.page
+      };
+      
+      setQnAThread(prev => [...prev, newEntry]);
+      setQnAResponse(data.answer);
+      setQnAQuery(""); // Clear input after successful submission
+      
+    } catch (error) {
+      console.error('Q&A error:', error);
+      toast({
+        title: "Q&A Error",
+        description: "Failed to get answer. Using fallback response.",
+        variant: "destructive",
+      });
+      
+      // Fallback response
+      const fallbackAnswer = "I apologize, but I cannot access the bylaw document at the moment. Please try again later or consult the BBMP 2019 bylaws directly for specific requirements.";
+      const newEntry = {
+        question: question,
+        answer: fallbackAnswer,
+        clause: null
+      };
+      
+      setQnAThread(prev => [...prev, newEntry]);
+      setQnAResponse(fallbackAnswer);
+      setQnAQuery("");
+      
+    } finally {
+      setQnALoading(false);
+    }
   };
 
   const downloadPDFReport = () => {
@@ -639,14 +753,53 @@ const Upload = () => {
                   placeholder="e.g., What's the minimum stair width?"
                   value={qnAQuery}
                   onChange={(e) => setQnAQuery(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && !qnALoading && handleQnASubmit()}
                   className="flex-1 bg-pastel-blue/5"
                 />
-                <Button onClick={handleQnASubmit} disabled={qnALoading}>
-                  {qnALoading ? "Asking..." : "Ask AI"}
+                <Button onClick={handleQnASubmit} disabled={qnALoading || !qnAQuery.trim()}>
+                  {qnALoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Asking...
+                    </>
+                  ) : (
+                    "Ask AI"
+                  )}
                 </Button>
               </div>
               
-              {qnAResponse && (
+              {/* Chat Thread */}
+              {qnAThread.length > 0 && (
+                <div className="mb-4 max-h-96 overflow-y-auto">
+                  <h3 className="text-sm font-medium text-gray-700 mb-3">Previous Questions & Answers</h3>
+                  <div className="space-y-4">
+                    {qnAThread.map((entry, index) => (
+                      <div key={index} className="border-l-4 border-blue-200 pl-4 py-2">
+                        <div className="mb-2">
+                          <p className="text-sm font-medium text-gray-900">Q: {entry.question}</p>
+                        </div>
+                        <div className="bg-gray-50 p-3 rounded-lg">
+                          <div className="flex items-start gap-3">
+                            <MessageSquare className="text-primary mt-1 flex-shrink-0" size={16} />
+                            <div className="flex-1">
+                              <p className="text-sm text-gray-800 mb-2">{entry.answer}</p>
+                              {entry.clause && (
+                                <p className="text-xs text-gray-500">
+                                  Reference: {entry.clause}
+                                  {entry.page && ` (Page ${entry.page})`}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {/* Current Response */}
+              {qnAResponse && qnAThread.length === 0 && (
                 <div className="bg-muted/30 p-4 rounded-lg mb-4">
                   <div className="flex items-start gap-3">
                     <MessageSquare className="text-primary mt-1" size={16} />
@@ -659,8 +812,9 @@ const Upload = () => {
                 {exampleQuestions.map((question, index) => (
                   <button
                     key={index}
-                    onClick={() => setQnAQuery(question)}
-                    className="px-3 py-1 text-xs bg-pastel-blue/20 hover:bg-pastel-blue/30 rounded-full transition-colors"
+                    onClick={() => handleExampleQuestion(question)}
+                    disabled={qnALoading}
+                    className="px-3 py-1 text-xs bg-pastel-blue/20 hover:bg-pastel-blue/30 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {question}
                   </button>
