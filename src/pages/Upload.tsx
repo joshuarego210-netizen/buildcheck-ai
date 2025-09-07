@@ -13,12 +13,29 @@ const Upload = () => {
   const [qnAQuery, setQnAQuery] = useState("");
   const [qnAResponse, setQnAResponse] = useState("");
   const [qnALoading, setQnALoading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file && file.type === "text/csv" && file.size <= 10 * 1024 * 1024) {
-      setUploadedFile(file);
+    setUploadError("");
+    
+    if (!file) return;
+    
+    // Check file type
+    if (file.type !== "text/csv" && !file.name.toLowerCase().endsWith('.csv')) {
+      setUploadError("Please upload a CSV file only.");
+      setUploadedFile(null);
+      return;
     }
+    
+    // Check file size (10 MB max)
+    if (file.size > 10 * 1024 * 1024) {
+      setUploadError("File size must be less than 10 MB.");
+      setUploadedFile(null);
+      return;
+    }
+    
+    setUploadedFile(file);
   };
 
   const handleAnalyze = () => {
@@ -41,10 +58,10 @@ const Upload = () => {
   };
 
   const mockComplianceData = [
-    { metric: "Building Height", value: "10.5m", limit: "Max: 12m", status: "compliant", reference: "BBMP 2019, Clause 4.1.1" },
-    { metric: "Setback", value: "9m", limit: "Required: 7m", status: "compliant", reference: "BBMP 2019, Clause 4.2.3" },
-    { metric: "Parking", value: "18 spaces", limit: "Min: 15", status: "compliant", reference: "BBMP 2019, Clause 5.1.2" },
-    { metric: "FAR", value: "1.5", limit: "Allowed: 1.25", status: "violation", reference: "BBMP 2019, Clause 4.2.1" },
+    { metric: "Building Height", value: "10.5m", limit: "Max: 12m", status: "compliant", reference: "BBMP 2019, Clause 4.3.2" },
+    { metric: "Setback", value: "9m", limit: "Required: 7m", status: "compliant", reference: "Clause 5.1.1" },
+    { metric: "Parking", value: "18 spaces", limit: "Min: 15", status: "compliant", reference: "Clause 6.2.1" },
+    { metric: "FAR", value: "1.5", limit: "Allowed: 1.25", status: "violation", reference: "Table 5.4.1" },
   ];
 
   const exampleQuestions = [
@@ -92,6 +109,9 @@ const Upload = () => {
                 </label>
                 {uploadedFile && (
                   <p className="mt-4 text-sm text-foreground">✓ {uploadedFile.name}</p>
+                )}
+                {uploadError && (
+                  <p className="mt-4 text-sm text-red-600">{uploadError}</p>
                 )}
               </div>
               
