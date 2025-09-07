@@ -2,8 +2,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import { Clock, AlertTriangle, CheckCircle2 } from "lucide-react";
-import beforeImage from "@/assets/BEFORE.png";
-import afterImage from "@/assets/AFTER.png";
+import beforeImage from "@/assets/BEFORE.jpeg";
+import afterImage from "@/assets/AFTER.jpeg";
 export const BeforeAfterSection = () => {
   const navigate = useNavigate();
   return <section className="py-20 px-6 bg-gradient-subtle">
