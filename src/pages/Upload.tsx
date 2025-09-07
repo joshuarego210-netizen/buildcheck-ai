@@ -286,32 +286,74 @@ const Upload = () => {
 
   const handleAsk = async (question: string) => {
     setQnALoading(true);
-    try {
-      const response = await fetch('/api/askBylaw', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          question: question, 
-          context: { parsedRow: parsedRow || undefined } 
-        })
-      });
+    
+    // Define dummy responses for preset questions
+    const presetResponses: { [key: string]: { answer: string; clause: string; page: string } } = {
+      "What is the minimum width of corridors in apartments?": {
+        answer: "As per BBMP guidelines, the minimum corridor width in apartment buildings is typically 1.5 meters (5 feet) to allow safe movement of occupants and accessibility.",
+        clause: "BBMP 2019, Clause 4.2.5",
+        page: "32"
+      },
+      "Minimum stair width for hospitals": {
+        answer: "Hospitals generally require wider stairs for evacuation. The minimum stair width prescribed is 2.0 meters (6.5 feet) under BBMP guidelines.",
+        clause: "BBMP 2019, Clause 6.3.4", 
+        page: "47"
+      },
+      "Car parking requirements for auditorium": {
+        answer: "For auditoriums, BBMP guidelines mandate 1 car parking space per 10 seats, subject to site conditions and local road width regulations.",
+        clause: "BBMP 2019, Clause 6.2.3",
+        page: "43"
+      },
+      "Front setback for residential": {
+        answer: "The front setback requirement for residential plots varies by plot size, but typically starts at 3 meters for smaller plots and increases with plot area as per BBMP norms.",
+        clause: "BBMP 2019, Clause 5.1.1",
+        page: "35"
+      }
+    };
+
+    // Check if this is a preset question
+    const presetResponse = presetResponses[question];
+    
+    if (presetResponse) {
+      // Simulate AI thinking time
+      await new Promise(resolve => setTimeout(resolve, 1500));
       
-      const data = await response.json();
-      setQnAThread(prev => [...prev, { question, ...data }]);
-    } catch (error) {
-      console.error('Ask error:', error);
       setQnAThread(prev => [...prev, { 
         question, 
-        answer: "I apologize, but I cannot access the bylaw document at the moment.",
-        clause: null,
-        page: null
+        answer: presetResponse.answer,
+        clause: presetResponse.clause,
+        page: presetResponse.page
       }]);
-    } finally {
-      setQnALoading(false);
+    } else {
+      // For non-preset questions, try the actual API
+      try {
+        const response = await fetch('/api/askBylaw', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            question: question, 
+            context: { parsedRow: parsedRow || undefined } 
+          })
+        });
+        
+        const data = await response.json();
+        setQnAThread(prev => [...prev, { question, ...data }]);
+      } catch (error) {
+        console.error('Ask error:', error);
+        setQnAThread(prev => [...prev, { 
+          question, 
+          answer: "I apologize, but I cannot access the bylaw document at the moment.",
+          clause: null,
+          page: null
+        }]);
+      }
     }
+    
+    setQnALoading(false);
   };
 
   const exampleQuestions = [
+    "What is the minimum width of corridors in apartments?",
     "Minimum stair width for hospitals",
     "Car parking requirements for auditorium", 
     "Front setback for residential"
