@@ -1,5 +1,46 @@
-# Welcome to your Lovable project
+# BuildCheck AI
 
+BuildCheck AI is a prototype that explores how building bylaw compliance checking can be simplified through structured building data and automated validation workflows.
+
+The project was developed as part of an AI-focused hackathon and demonstrates how BIM-derived project information can be checked against regulatory requirements through a simple and accessible interface.
+
+## Problem
+
+Architects often spend significant time manually interpreting bylaws, performing calculations, and checking compliance requirements such as:
+
+- Setbacks
+- Building height
+- Parking requirements
+- FAR (Floor Area Ratio)
+
+This process is repetitive, error-prone, and difficult to scale across jurisdictions.
+
+## Solution
+
+BuildCheck AI provides:
+
+- CSV-based building data upload
+- Automated compliance validation
+- Compliance summaries
+- Downloadable compliance reports
+- Foundation for future AI-assisted bylaw retrieval and reasoning
+
+## Future Direction
+
+Future iterations may include:
+
+- Document retrieval using RAG workflows
+- Direct bylaw querying
+- RVT and IFC support
+- Multi-city compliance support
+
+## Built With
+
+- Lovable
+- GitHub
+- Windsurf
+- LlamaCloud (exploration)
+- 
 ## Project info
 
 **URL**: https://lovable.dev/projects/a41f2d53-d57d-4f97-9c38-27baf16858e6
