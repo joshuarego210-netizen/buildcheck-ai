@@ -6,38 +6,41 @@ export const HeroSection = () => {
   const navigate = useNavigate();
 
   return (
-    <section className="relative bg-gradient-to-br from-background to-muted py-20 px-6">
+    <section className="bg-background py-24 px-6">
       <div className="container mx-auto max-w-6xl">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
-          <div className="space-y-8">
-            <div className="space-y-4">
-              <h1 className="text-5xl lg:text-6xl font-bold leading-tight">
-                Check Your Building Bylaw
-                <span className="bg-gradient-to-r from-primary to-primary-hover bg-clip-text text-transparent">
-                  {" "}Compliance
-                </span>
+        <div className="grid lg:grid-cols-2 gap-16 items-center">
+          <div className="space-y-10">
+            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+              Bylaw compliance for BIM teams
+            </p>
+            <div className="space-y-6">
+              <h1 className="text-5xl lg:text-6xl font-semibold leading-[1.05] tracking-tight text-foreground">
+                Check Your
+                <br />
+                Building Bylaw
+                <br />
+                <span className="text-primary">Compliance</span>
               </h1>
-              <p className="text-xl text-muted-foreground leading-relaxed">
+              <p className="text-lg text-muted-foreground leading-relaxed max-w-md">
                 From days of manual work to minutes of AI-powered validation.
               </p>
             </div>
-            
-            <Button 
-              variant="hero" 
+
+            <Button
+              variant="hero"
               size="lg"
               onClick={() => navigate("/upload")}
-              className="text-lg px-8 py-6 h-auto"
+              className="text-base px-8 py-6 h-auto"
             >
               Check Your Building Compliance
             </Button>
           </div>
-          
-          <div className="relative">
-            <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-primary-hover/20 rounded-2xl blur-3xl"></div>
-            <img 
-              src={heroImage} 
+
+          <div>
+            <img
+              src={heroImage}
               alt="BIM model with compliance overlay illustration"
-              className="relative rounded-2xl shadow-2xl w-full h-auto"
+              className="rounded-md w-full h-auto border border-border"
             />
           </div>
         </div>
